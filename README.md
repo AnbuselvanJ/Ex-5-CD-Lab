@@ -15,40 +15,54 @@ To write a YACC program to recognize the grammar anb where n>=10.
 # PROGRAM:
 '''
 %{
-#include <stdio.h>
-#include <stdlib.h>
-int count = 0;  // to count number of a's
+#include "y.tab.h"
+#include <string.h>
 %}
 
-%token A B
+%%
+[a-zA-Z][a-zA-Z0-9]*    { yylval.str = strdup(yytext); return IDENTIFIER; }
+\n                      { return '\n'; }
+.                       { return yytext[0]; }
+%%
+
+int yywrap() {
+    return 1;
+}
+'''
+'''
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+extern int yylex();
+void yyerror(const char *msg);
+
+%}
+
+%union {
+    char *str;
+}
+
+%token <str> IDENTIFIER
 
 %%
 start:
-    sequence B '\n' {
-        if (count >= 10) {
-            printf("Valid string: %d a's followed by b\n", count);
-        } else {
-            printf("Invalid: Less than 10 a's\n");
-        }
-        count = 0; // reset for next input
+    IDENTIFIER '\n' {
+        printf("Valid variable: %s\n", $1);
+        free($1);  // clean up strdup memory
     }
     ;
-
-sequence:
-    A { count++; }
-  | sequence A { count++; }
-  ;
 %%
 
 int main() {
-    printf("Enter a string (aⁿb where n >= 10):\n");
+    printf("Enter a variable name:\n");
     return yyparse();
 }
 
 void yyerror(const char *msg) {
-    printf("Syntax error: %s\n", msg);
+    printf("Invalid variable name\n");
 }
-
 '''
 # OUTPUT
 <img width="1447" height="718" alt="image" src="https://github.com/user-attachments/assets/65d9b806-97d7-4a3d-8ed0-b14e7c4f12b4" />
